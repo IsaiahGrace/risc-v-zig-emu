@@ -1,65 +1,43 @@
 const std = @import("std");
+const rv32i = @import("rv32i.zig");
+const codeGen = @import("codeGen.zig");
 
-const Opcode = enum {
-    op_nop,
-    op_mov,
-    op_movi,
-    op_add,
-    op_xor,
-    op_and,
-    op_jnz,
-    op_jmp,
-};
+// Thoughts on organization of this project:
+// Binary representation of the opcodes probably isn't the fastest (or most idiomatic) way of representing them internally
+// The "Instruction decode" stage of my emulator can read in the u32 instruction and create a struct of the instruction
+// The "Instruction execute" stage of the emulator can be split into execution engines for each type of instruction.
+// So there won't be an ALU unit per-say, just Itype, Rtype, etc.. executors.
 
-const Instruction = struct {
-    op: Opcode,
-    src: [2]u5,
-    dst: u5,
-    imm: u32,
-};
+// I can use a hashmap for the memory, the key being the address, and the value being the data
+// Icahces and Dcaches seem reasonable to implement, but probably unnecessary for performance.
 
-const RegisterFile = struct {
-    r: [32]u32,
-};
+// Decode -->  Itype --> Done?
+//        |->  Rtype -|
+//        |->  Utype -|
+//        |->  Jtype -|
+//        etc...
 
-fn exe(inst: Instruction, reg: *RegisterFile) void {
-    switch (inst.op) {
-        .op_nop => {},
-        .op_mov => reg.r[inst.dst] = reg.r[inst.src[0]],
-        .op_movi => reg.r[inst.dst] = inst.imm,
-        .op_add => reg.r[inst.dst] = reg.r[inst.src[0]] +% reg.r[inst.src[1]],
-        .op_xor => reg.r[inst.dst] = reg.r[inst.src[0]] ^ reg.r[inst.src[1]],
-        .op_and => reg.r[inst.dst] = reg.r[inst.src[0]] & reg.r[inst.src[1]],
-        else => unreachable,
-    }
+comptime {
+    // Just to get the compiler to care about rv32i.zig
+    _ = rv32i;
+    _ = codeGen;
+}
+
+fn exe(inst: rv32i.Instruction, state: *rv32i.State) void {
+    _ = inst;
+    _ = state;
 }
 
 pub fn main() anyerror!void {
     std.log.info("Booting up RISC-V emulator!", .{});
-    var reg = std.mem.zeroInit(RegisterFile, .{});
-
-    const program = [_]Instruction{
-        .{ .op = .op_movi, .src = .{ 0, 0 }, .dst = 1, .imm = 0xdeadbeef },
-        .{ .op = .op_movi, .src = .{ 0, 0 }, .dst = 2, .imm = 0xbaadc0de },
-        .{ .op = .op_movi, .src = .{ 0, 0 }, .dst = 3, .imm = 0xaabbccdd },
-        .{ .op = .op_movi, .src = .{ 0, 0 }, .dst = 4, .imm = 0xaaaacccc },
-        .{ .op = .op_and, .src = .{ 3, 4 }, .dst = 1, .imm = 0 },
-        .{ .op = .op_xor, .src = .{ 3, 4 }, .dst = 2, .imm = 0 },
-        .{ .op = .op_add, .src = .{ 3, 4 }, .dst = 5, .imm = 0 },
-    };
-
-    for (program) |inst, pc| {
-        exe(inst, &reg);
-        std.log.info("PC : {}", .{pc});
-        printRegisters(reg, false);
-    }
+    var state = std.mem.zeroInit(rv32i.State, .{});
 
     std.log.info("Done with program execution.", .{});
-    printRegisters(reg, true);
+    printRegisters(state, true);
 }
 
-fn printRegisters(reg: RegisterFile, printZeros: bool) void {
-    for (reg.r) |r, i| {
+fn printRegisters(state: rv32i.State, printZeros: bool) void {
+    for (state.x) |r, i| {
         if (!printZeros and r == 0) continue;
         std.log.info("r{:<2} : 0x{X:0>8}", .{ i, r });
     }
