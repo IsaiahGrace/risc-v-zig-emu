@@ -1,6 +1,6 @@
 const std = @import("std");
 const rv32i = @import("rv32i.zig");
-const codeGen = @import("codeGen.zig");
+//const CPU = @import("CPU.zig");
 
 // Thoughts on organization of this project:
 // Binary representation of the opcodes probably isn't the fastest (or most idiomatic) way of representing them internally
@@ -16,16 +16,8 @@ const codeGen = @import("codeGen.zig");
 //        |->  Utype -|
 //        |->  Jtype -|
 //        etc...
-
 comptime {
-    // Just to get the compiler to care about rv32i.zig
     _ = rv32i;
-    _ = codeGen;
-}
-
-fn exe(inst: rv32i.Instruction, state: *rv32i.State) void {
-    _ = inst;
-    _ = state;
 }
 
 pub fn main() anyerror!void {
