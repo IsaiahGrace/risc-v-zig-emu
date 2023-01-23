@@ -1,36 +1,67 @@
 const std = @import("std");
 const rv32i = @import("rv32i.zig");
-//const CPU = @import("CPU.zig");
+const CPU = @import("CPU.zig");
+const Assembler = @import("assembler.zig").Assembler;
 
-// Thoughts on organization of this project:
-// Binary representation of the opcodes probably isn't the fastest (or most idiomatic) way of representing them internally
-// The "Instruction decode" stage of my emulator can read in the u32 instruction and create a struct of the instruction
-// The "Instruction execute" stage of the emulator can be split into execution engines for each type of instruction.
-// So there won't be an ALU unit per-say, just Itype, Rtype, etc.. executors.
-
-// I can use a hashmap for the memory, the key being the address, and the value being the data
-// Icahces and Dcaches seem reasonable to implement, but probably unnecessary for performance.
-
-// Decode -->  Itype --> Done?
-//        |->  Rtype -|
-//        |->  Utype -|
-//        |->  Jtype -|
-//        etc...
+const tests = @import("tests.zig");
 comptime {
-    _ = rv32i;
+    _ = tests;
 }
 
 pub fn main() anyerror!void {
-    std.log.info("Booting up RISC-V emulator!", .{});
-    var state = std.mem.zeroInit(rv32i.State, .{});
+    var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
+    defer arena.deinit();
+    const allocator = arena.allocator();
 
+    var machine = rv32i.Machine.init();
+
+    var assembler = Assembler.init(allocator);
+    defer assembler.deinit();
+
+    var input = try std.fs.cwd().readFileAlloc(allocator, "asm/test1", std.math.maxInt(usize));
+    defer allocator.free(input);
+
+    std.log.info("Parsing asm file.", .{});
+    try assembler.parseAsm(input);
+
+    assembler.loadProgram(&machine);
+
+    std.log.info("Booting up RISC-V emulator!", .{});
+    try CPU.execute(&machine);
+    try CPU.execute(&machine);
+    try CPU.execute(&machine);
+    try CPU.execute(&machine);
+    try CPU.execute(&machine);
+    try CPU.execute(&machine);
+    try CPU.execute(&machine);
+    try CPU.execute(&machine);
     std.log.info("Done with program execution.", .{});
-    printRegisters(state, true);
+
+    printRegisters(&machine, false);
+    std.log.info(" pc = {d}", .{machine.pc});
+    printMemory(&machine, false);
 }
 
-fn printRegisters(state: rv32i.State, printZeros: bool) void {
-    for (state.x) |r, i| {
-        if (!printZeros and r == 0) continue;
-        std.log.info("r{:<2} : 0x{X:0>8}", .{ i, r });
+fn printRegisters(machine: *rv32i.Machine, printZeroes: bool) void {
+    for (machine.r) |r, i| {
+        if (!printZeroes and r == 0) continue;
+        if (i < 10) {
+            // std.log.info(" r{d} = 0b{b:0>32}", .{ i, r });
+            // std.log.info(" r{d} = 0x{X:0>8}", .{ i, r });
+            std.log.info(" r{d} = {d}", .{ i, r });
+        } else {
+            std.log.info("r{:<2} = 0b{b:0>32}", .{ i, r });
+            // std.log.info("r{:<2} = 0x{X:0>8}", .{ i, r });
+            std.log.info("r{:<2} = {d}", .{ i, r });
+        }
+    }
+}
+
+fn printMemory(machine: *rv32i.Machine, printZeroes: bool) void {
+    for (machine.memory) |w, i| {
+        if (!printZeroes and w == 0) continue;
+        std.log.info("m[{:4}] = 0b{b:0>32}", .{ i, w });
+        // std.log.info("m[{:4}] = 0x{X:0>8}", .{ i, w });
+        // std.log.info("m[{:4}] = {d}", .{ i, w });
     }
 }
