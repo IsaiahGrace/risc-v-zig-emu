@@ -1,0 +1,9 @@
+name: "Zig build test"
+on: push
+jobs:
+  zig-build-test:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - uses: goto-bus-stop/setup-zig@v2
+    - run: zig build test
