@@ -1,0 +1,4 @@
+ADDI r1, r0, 42
+ADDI r2, r1, 5
+ADD r3, r1, r2
+ADDI r4, r0, -1

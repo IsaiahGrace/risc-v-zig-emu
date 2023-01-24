@@ -36,11 +36,11 @@ pub const InstructionInfo = struct {
 
     pub fn create(instruction: Instruction) !InstructionInfo {
         var info: InstructionInfo = undefined;
-        try info.getInfo(instruction);
+        try info.decode(instruction);
         return info;
     }
 
-    pub fn getInfo(self: *InstructionInfo, instruction: Instruction) !void {
+    pub fn decode(self: *InstructionInfo, instruction: Instruction) !void {
         var instructionGroup: ?InstructionGroup = null;
         var instructionType: ?InstructionType = null;
 

@@ -18,7 +18,7 @@ pub fn main() anyerror!void {
     var assembler = Assembler.init(allocator);
     defer assembler.deinit();
 
-    var input = try std.fs.cwd().readFileAlloc(allocator, "asm/test1", std.math.maxInt(usize));
+    var input = try std.fs.cwd().readFileAlloc(allocator, "asm/main", std.math.maxInt(usize));
     defer allocator.free(input);
 
     std.log.info("Parsing asm file.", .{});
@@ -27,14 +27,10 @@ pub fn main() anyerror!void {
     assembler.loadProgram(&machine);
 
     std.log.info("Booting up RISC-V emulator!", .{});
-    try CPU.execute(&machine);
-    try CPU.execute(&machine);
-    try CPU.execute(&machine);
-    try CPU.execute(&machine);
-    try CPU.execute(&machine);
-    try CPU.execute(&machine);
-    try CPU.execute(&machine);
-    try CPU.execute(&machine);
+    var cycles: u32 = 0;
+    while (cycles < 1000) : (cycles += 1) {
+        try CPU.execute(&machine);
+    }
     std.log.info("Done with program execution.", .{});
 
     printRegisters(&machine, false);
@@ -46,13 +42,13 @@ fn printRegisters(machine: *rv32i.Machine, printZeroes: bool) void {
     for (machine.r) |r, i| {
         if (!printZeroes and r == 0) continue;
         if (i < 10) {
-            // std.log.info(" r{d} = 0b{b:0>32}", .{ i, r });
+            std.log.info(" r{d} = 0b{b:0>32}", .{ i, r });
             // std.log.info(" r{d} = 0x{X:0>8}", .{ i, r });
-            std.log.info(" r{d} = {d}", .{ i, r });
+            // std.log.info(" r{d} = {d}", .{ i, r });
         } else {
             std.log.info("r{:<2} = 0b{b:0>32}", .{ i, r });
             // std.log.info("r{:<2} = 0x{X:0>8}", .{ i, r });
-            std.log.info("r{:<2} = {d}", .{ i, r });
+            // std.log.info("r{:<2} = {d}", .{ i, r });
         }
     }
 }
